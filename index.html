@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface-2: #242424;
+      --border: #333;
+      --text: #e8e8e8;
+      --text-muted: #888;
+      --accent: #4f8cff;
+      --accent-hover: #3a75e6;
+      --green: #34d399;
+      --red: #f87171;
+      --orange: #fbbf24;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+
+    /* Tabs */
+    nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+    }
+
+    nav button {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+    }
+
+    nav button.active { color: var(--accent); }
+    nav button svg { width: 22px; height: 22px; }
+
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .card-title { font-weight: 600; font-size: 1rem; }
+
+    .card-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover { background: #e05a5a; }
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--border); }
+
+    .btn-block { width: 100%; justify-content: center; }
+
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+    .btn-icon {
+      width: 32px; height: 32px; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 6px; background: var(--surface-2);
+      border: 1px solid var(--border); color: var(--text-muted);
+      cursor: pointer; font-size: 1rem;
+    }
+
+    .btn-icon:hover { background: var(--border); color: var(--text); }
+
+    /* Inputs */
+    input, select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus { border-color: var(--accent); }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .form-group { margin-bottom: 14px; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Exercise set row */
+    .set-row {
+      display: grid;
+      grid-template-columns: 40px 1fr 1fr 40px;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .set-row:last-child { border-bottom: none; }
+
+    .set-num {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .set-row input {
+      text-align: center;
+      padding: 8px;
+    }
+
+    .set-header {
+      display: grid;
+      grid-template-columns: 40px 1fr 1fr 40px;
+      gap: 8px;
+      padding-bottom: 4px;
+    }
+
+    .set-header span {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    /* Timer */
+    .timer-display {
+      text-align: center;
+      padding: 30px 0;
+    }
+
+    .timer-display .time {
+      font-size: 4.5rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+    }
+
+    .timer-display .phase {
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .timer-display .round-info {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .timer-settings {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .timer-settings .form-group:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .phase-work { color: var(--green); }
+    .phase-rest { color: var(--orange); }
+
+    /* Progress ring */
+    .timer-ring {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      margin: 0 auto 10px;
+    }
+
+    .timer-ring svg { transform: rotate(-90deg); }
+
+    .timer-ring .bg {
+      stroke: var(--surface-2);
+      fill: none;
+      stroke-width: 6;
+    }
+
+    .timer-ring .progress {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.3s linear;
+    }
+
+    .timer-ring .center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    /* History */
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-item:last-child { border-bottom: none; }
+
+    .history-date {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .history-summary {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .history-name { font-weight: 600; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: var(--surface-2);
+      color: var(--text-muted);
+    }
+
+    .badge-green { background: #163a2b; color: var(--green); }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 4px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 600px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px;
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state p { margin-top: 8px; font-size: 0.9rem; }
+
+    /* Exercise list during workout */
+    .exercise-entry { margin-bottom: 20px; }
+
+    .exercise-entry .card-header { margin-bottom: 8px; }
+
+    .delete-exercise {
+      color: var(--red);
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .delete-exercise:hover { text-decoration: underline; }
+
+    /* Streak */
+    .streak-bar {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      margin: 12px 0;
+    }
+
+    .streak-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+    }
+
+    .streak-dot.done { background: #163a2b; border-color: var(--green); color: var(--green); }
+    .streak-dot.today { border-color: var(--accent); }
+
+    /* Routines */
+    .routine-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .routine-card:hover { border-color: var(--accent); background: var(--surface-2); }
+
+    .routine-card .day-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .routine-card .routine-title {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .routine-card .routine-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .routine-card .routine-exercises {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .routine-tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .routine-section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin: 16px 0 8px;
+    }
+
+    .routine-section-label:first-child { margin-top: 0; }
+
+    /* Rest Timer */
+    .rest-timer-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      position: sticky;
+      top: 122px;
+      z-index: 50;
+    }
+
+    .rest-timer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .rest-timer-top .rest-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .rest-timer-top .rest-time {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .rest-timer-top .rest-time.resting { color: var(--orange); }
+
+    .rest-presets {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .rest-presets button {
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .rest-presets button:hover { border-color: var(--accent); color: var(--text); }
+    .rest-presets button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .rest-progress-track {
+      height: 4px;
+      background: var(--surface-2);
+      border-radius: 2px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .rest-progress-fill {
+      height: 100%;
+      background: var(--orange);
+      border-radius: 2px;
+      transition: width 0.3s linear;
+      width: 0%;
+    }
+
+    .rest-progress-fill.done { background: var(--green); }
+
+    /* Exercise info */
+    .exercise-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .exercise-meta .rep-range {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(79,140,255,0.1);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .exercise-meta .rest-rec {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-tip {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      padding: 8px 10px;
+      background: var(--surface-2);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .form-tip-toggle {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      margin-bottom: 8px;
+    }
+
+    .form-tip-toggle:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><span>&#9889;</span> Workout Tracker</h1>
+</header>
+
+<!-- ==================== WORKOUT TAB ==================== -->
+<div class="container">
+  <div id="tab-workout" class="tab active">
+    <div id="workout-idle">
+      <div style="margin: 20px 0">
+        <button class="btn btn-primary btn-block" onclick="startWorkout()">+ Start Workout</button>
+      </div>
+
+      <div id="recent-workouts"></div>
+    </div>
+
+    <div id="workout-active" style="display:none">
+      <div class="card" style="background: var(--surface-2); position:sticky; top:53px; z-index:51;">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div id="workout-timer" style="font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;">00:00</div>
+            <div style="font-size:0.78rem;color:var(--text-muted)">Workout Duration</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="addExercise()">+ Exercise</button>
+            <button class="btn btn-danger btn-sm" onclick="finishWorkout()">Finish</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rest-timer-bar">
+        <div class="rest-timer-top">
+          <span class="rest-label">Rest Timer</span>
+          <span class="rest-time" id="rest-time">0:00</span>
+        </div>
+        <div class="rest-presets">
+          <button onclick="startRest(30)">0:30</button>
+          <button onclick="startRest(45)">0:45</button>
+          <button onclick="startRest(60)">1:00</button>
+          <button onclick="startRest(90)" class="active">1:30</button>
+          <button onclick="startRest(120)">2:00</button>
+          <button onclick="stopRest()" id="rest-stop-btn" style="display:none;background:var(--red);border-color:var(--red);color:#fff">Stop</button>
+        </div>
+        <div class="rest-progress-track">
+          <div class="rest-progress-fill" id="rest-progress"></div>
+        </div>
+      </div>
+
+      <div id="exercise-list"></div>
+    </div>
+  </div>
+
+  <!-- ==================== ROUTINES TAB ==================== -->
+  <div id="tab-routines" class="tab">
+    <div style="margin-bottom:12px">
+      <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:4px">6-Day Dumbbell PPL Split</h3>
+      <p style="font-size:0.78rem;color:var(--text-muted)">Push/Pull/Legs repeated twice weekly. Strength focus Days 1-3, Hypertrophy Days 4-6. Tap to start.</p>
+    </div>
+    <div id="routines-list"></div>
+  </div>
+
+  <!-- ==================== TIMER TAB ==================== -->
+  <div id="tab-timer" class="tab">
+    <div class="card">
+      <div class="timer-settings">
+        <div class="form-group">
+          <label>Work (sec)</label>
+          <input type="number" id="timer-work" value="30" min="5" max="300">
+        </div>
+        <div class="form-group">
+          <label>Rest (sec)</label>
+          <input type="number" id="timer-rest" value="10" min="5" max="300">
+        </div>
+        <div class="form-group">
+          <label>Rounds</label>
+          <input type="number" id="timer-rounds" value="8" min="1" max="50">
+        </div>
+      </div>
+    </div>
+
+    <div class="timer-display">
+      <div class="timer-ring">
+        <svg width="240" height="240">
+          <circle class="bg" cx="120" cy="120" r="105" />
+          <circle class="progress" id="timer-progress" cx="120" cy="120" r="105"
+            stroke-dasharray="659.73" stroke-dashoffset="0" stroke="var(--green)" />
+        </svg>
+        <div class="center">
+          <div class="phase" id="timer-phase">READY</div>
+          <div class="time" id="timer-time">0:30</div>
+          <div class="round-info" id="timer-round-info">Round 1 / 8</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="timer-controls">
+      <button class="btn btn-primary" id="timer-start-btn" onclick="toggleTimer()">Start</button>
+      <button class="btn btn-ghost" onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+
+  <!-- ==================== HISTORY TAB ==================== -->
+  <div id="tab-history" class="tab">
+    <div id="stats-section"></div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Workout History</span>
+        <button class="btn-icon" onclick="clearHistory()" title="Clear all">&times;</button>
+      </div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EXERCISE MODAL ==================== -->
+<div class="modal-overlay" id="exercise-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 style="margin-bottom:16px;font-size:1.1rem">Add Exercise</h3>
+
+    <div class="form-group">
+      <label>Exercise Name</label>
+      <input type="text" id="exercise-name" placeholder="e.g. Bench Press" list="exercise-suggestions">
+      <datalist id="exercise-suggestions"></datalist>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddExercise()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== NAV ==================== -->
+<nav>
+  <button class="active" onclick="switchTab('workout', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+    Workout
+  </button>
+  <button onclick="switchTab('routines', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>
+    Routines
+  </button>
+  <button onclick="switchTab('timer', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M12 5V3M10 3h4"/></svg>
+    Timer
+  </button>
+  <button onclick="switchTab('history', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></svg>
+    History
+  </button>
+</nav>
+
+<script>
+// ==================== DATA ====================
+const STORAGE_KEY = 'workout_tracker_data';
+const EXERCISES_KEY = 'workout_exercise_names';
+
+const commonExercises = [
+  'Bench Press','Squat','Deadlift','Overhead Press','Barbell Row',
+  'Pull Ups','Push Ups','Dips','Lunges','Leg Press',
+  'Lat Pulldown','Cable Row','Dumbbell Curl','Tricep Extension',
+  'Leg Curl','Leg Extension','Calf Raise','Plank','Romanian Deadlift',
+  'Incline Bench Press','Hip Thrust','Face Pull'
+];
+
+function getData() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"workouts":[]}');
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function getExerciseNames() {
+  const saved = JSON.parse(localStorage.getItem(EXERCISES_KEY) || '[]');
+  return [...new Set([...commonExercises, ...saved])];
+}
+
+function saveExerciseName(name) {
+  const names = JSON.parse(localStorage.getItem(EXERCISES_KEY) || '[]');
+  if (!names.includes(name) && !commonExercises.includes(name)) {
+    names.push(name);
+    localStorage.setItem(EXERCISES_KEY, JSON.stringify(names));
+  }
+}
+
+// ==================== TABS ====================
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+
+  if (name === 'history') renderHistory();
+}
+
+// ==================== WORKOUT ====================
+let activeWorkout = null;
+let workoutInterval = null;
+let workoutStartTime = null;
+
+function startWorkout() {
+  activeWorkout = { exercises: [], startTime: Date.now() };
+  workoutStartTime = Date.now();
+  document.getElementById('workout-idle').style.display = 'none';
+  document.getElementById('workout-active').style.display = 'block';
+
+  workoutInterval = setInterval(updateWorkoutTimer, 1000);
+  updateWorkoutTimer();
+}
+
+function updateWorkoutTimer() {
+  const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
+  const min = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const sec = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('workout-timer').textContent = `${min}:${sec}`;
+}
+
+function addExercise() {
+  const datalist = document.getElementById('exercise-suggestions');
+  datalist.innerHTML = getExerciseNames().map(n => `<option value="${n}">`).join('');
+  document.getElementById('exercise-name').value = '';
+  document.getElementById('exercise-modal').classList.add('active');
+  setTimeout(() => document.getElementById('exercise-name').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('exercise-modal').classList.remove('active');
+}
+
+function confirmAddExercise() {
+  const name = document.getElementById('exercise-name').value.trim();
+  if (!name) return;
+
+  saveExerciseName(name);
+  activeWorkout.exercises.push({ name, sets: [{ weight: '', reps: '' }] });
+  renderExercises();
+  closeModal();
+}
+
+function renderExercises() {
+  const container = document.getElementById('exercise-list');
+  container.innerHTML = activeWorkout.exercises.map((ex, ei) => {
+    const info = EXERCISE_INFO[ex.name];
+    const repRange = ex.repRange || (info && info.reps) || '';
+    const rest = info ? info.rest : '';
+    const tip = info ? info.tip : '';
+
+    return `
+    <div class="exercise-entry card">
+      <div class="card-header">
+        <span class="card-title">${ex.name}</span>
+        <span class="delete-exercise" onclick="removeExercise(${ei})">Remove</span>
+      </div>
+      ${repRange || rest ? `<div class="exercise-meta">
+        ${repRange ? `<span class="rep-range">${ex.sets.length} x ${repRange} reps</span>` : ''}
+        ${rest ? `<span class="rest-rec">Rest: ${rest}</span>` : ''}
+      </div>` : ''}
+      ${tip ? `<button class="form-tip-toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">Form Tips</button>
+      <div class="form-tip" style="display:none">${tip}</div>` : ''}
+      <div class="set-header">
+        <span>Set</span>
+        <span>Lbs</span>
+        <span>Reps</span>
+        <span></span>
+      </div>
+      ${ex.sets.map((set, si) => `
+        <div class="set-row">
+          <div class="set-num">${si + 1}</div>
+          <input type="number" placeholder="0" value="${set.weight}"
+            onchange="updateSet(${ei},${si},'weight',this.value)">
+          <input type="number" placeholder="0" value="${set.reps}"
+            onchange="updateSet(${ei},${si},'reps',this.value)">
+          <button class="btn-icon" onclick="removeSet(${ei},${si})" ${ex.sets.length === 1 ? 'disabled' : ''}>&minus;</button>
+        </div>
+      `).join('')}
+      <button class="btn btn-ghost btn-sm btn-block" style="margin-top:8px" onclick="addSet(${ei})">+ Add Set</button>
+    </div>`;
+  }).join('');
+}
+
+function updateSet(ei, si, field, value) {
+  activeWorkout.exercises[ei].sets[si][field] = value;
+}
+
+function addSet(ei) {
+  activeWorkout.exercises[ei].sets.push({ weight: '', reps: '' });
+  renderExercises();
+}
+
+function removeSet(ei, si) {
+  activeWorkout.exercises[ei].sets.splice(si, 1);
+  renderExercises();
+}
+
+function removeExercise(ei) {
+  activeWorkout.exercises.splice(ei, 1);
+  renderExercises();
+}
+
+function finishWorkout() {
+  if (activeWorkout.exercises.length === 0) {
+    if (!confirm('No exercises logged. Discard workout?')) return;
+  } else {
+    if (!confirm('Finish this workout?')) return;
+  }
+
+  clearInterval(workoutInterval);
+  stopRest();
+
+  if (activeWorkout.exercises.length > 0) {
+    const data = getData();
+    const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
+    data.workouts.unshift({
+      date: new Date().toISOString(),
+      duration: elapsed,
+      exercises: activeWorkout.exercises
+    });
+    saveData(data);
+  }
+
+  activeWorkout = null;
+  workoutStartTime = null;
+  document.getElementById('workout-active').style.display = 'none';
+  document.getElementById('workout-idle').style.display = 'block';
+  renderRecentWorkouts();
+}
+
+function renderRecentWorkouts() {
+  const data = getData();
+  const container = document.getElementById('recent-workouts');
+
+  if (data.workouts.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <p>No workouts yet. Tap "Start Workout" to begin.</p>
+      </div>`;
+    return;
+  }
+
+  const recent = data.workouts.slice(0, 5);
+  container.innerHTML = `
+    <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:12px">Recent Workouts</h3>
+    ${recent.map(w => {
+      const d = new Date(w.date);
+      const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const dur = `${Math.floor(w.duration / 60)}m`;
+      const totalSets = w.exercises.reduce((sum, e) => sum + e.sets.length, 0);
+      const names = w.exercises.map(e => e.name).join(', ');
+      return `
+        <div class="card" style="padding:12px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <div class="history-name">${names}</div>
+              <div class="history-summary">${w.exercises.length} exercise${w.exercises.length > 1 ? 's' : ''} &middot; ${totalSets} sets &middot; ${dur}</div>
+            </div>
+            <div class="history-date">${dateStr}</div>
+          </div>
+        </div>`;
+    }).join('')}`;
+}
+
+// ==================== INTERVAL TIMER ====================
+let timerState = { running: false, phase: 'work', currentRound: 1, timeLeft: 0 };
+let timerInterval = null;
+const CIRCUMFERENCE = 2 * Math.PI * 105;
+
+function getTimerSettings() {
+  return {
+    work: parseInt(document.getElementById('timer-work').value) || 30,
+    rest: parseInt(document.getElementById('timer-rest').value) || 10,
+    rounds: parseInt(document.getElementById('timer-rounds').value) || 8
+  };
+}
+
+function updateTimerDisplay() {
+  const s = timerState;
+  const settings = getTimerSettings();
+  const min = Math.floor(s.timeLeft / 60);
+  const sec = s.timeLeft % 60;
+  document.getElementById('timer-time').textContent = `${min}:${String(sec).padStart(2, '0')}`;
+  document.getElementById('timer-phase').textContent = s.phase.toUpperCase();
+  document.getElementById('timer-phase').className = 'phase phase-' + s.phase;
+  document.getElementById('timer-round-info').textContent = `Round ${s.currentRound} / ${settings.rounds}`;
+
+  const total = s.phase === 'work' ? settings.work : settings.rest;
+  const progress = s.timeLeft / total;
+  const offset = CIRCUMFERENCE * (1 - progress);
+  const ring = document.getElementById('timer-progress');
+  ring.setAttribute('stroke-dashoffset', offset);
+  ring.setAttribute('stroke', s.phase === 'work' ? 'var(--green)' : 'var(--orange)');
+}
+
+function toggleTimer() {
+  if (timerState.running) {
+    clearInterval(timerInterval);
+    timerState.running = false;
+    document.getElementById('timer-start-btn').textContent = 'Resume';
+  } else {
+    if (timerState.timeLeft === 0) {
+      const settings = getTimerSettings();
+      timerState = { running: true, phase: 'work', currentRound: 1, timeLeft: settings.work };
+    } else {
+      timerState.running = true;
+    }
+    document.getElementById('timer-start-btn').textContent = 'Pause';
+    timerInterval = setInterval(timerTick, 1000);
+    updateTimerDisplay();
+  }
+}
+
+function timerTick() {
+  timerState.timeLeft--;
+
+  if (timerState.timeLeft < 0) {
+    const settings = getTimerSettings();
+    playBeep();
+
+    if (timerState.phase === 'work') {
+      if (timerState.currentRound >= settings.rounds) {
+        clearInterval(timerInterval);
+        timerState.running = false;
+        timerState.timeLeft = 0;
+        timerState.phase = 'work';
+        document.getElementById('timer-phase').textContent = 'DONE!';
+        document.getElementById('timer-phase').className = 'phase phase-work';
+        document.getElementById('timer-time').textContent = '0:00';
+        document.getElementById('timer-start-btn').textContent = 'Start';
+        document.getElementById('timer-progress').setAttribute('stroke-dashoffset', 0);
+        return;
+      }
+      timerState.phase = 'rest';
+      timerState.timeLeft = settings.rest;
+    } else {
+      timerState.phase = 'work';
+      timerState.currentRound++;
+      timerState.timeLeft = settings.work;
+    }
+  }
+
+  updateTimerDisplay();
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  const settings = getTimerSettings();
+  timerState = { running: false, phase: 'work', currentRound: 1, timeLeft: settings.work };
+  document.getElementById('timer-start-btn').textContent = 'Start';
+  updateTimerDisplay();
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'square';
+    gain.gain.value = 0.15;
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {}
+}
+
+// Timer setting changes reset
+['timer-work', 'timer-rest', 'timer-rounds'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    if (!timerState.running && timerState.timeLeft === 0) {
+      resetTimer();
+    }
+  });
+});
+
+// ==================== HISTORY / STATS ====================
+function renderHistory() {
+  const data = getData();
+  const list = document.getElementById('history-list');
+  const statsSection = document.getElementById('stats-section');
+
+  if (data.workouts.length === 0) {
+    statsSection.innerHTML = '';
+    list.innerHTML = '<div class="empty-state"><p>No workout history yet.</p></div>';
+    return;
+  }
+
+  // Stats
+  const totalWorkouts = data.workouts.length;
+  const totalDuration = data.workouts.reduce((s, w) => s + w.duration, 0);
+  const totalSets = data.workouts.reduce((s, w) => s + w.exercises.reduce((ss, e) => ss + e.sets.length, 0), 0);
+  const totalVolume = data.workouts.reduce((s, w) => s + w.exercises.reduce((ss, e) =>
+    ss + e.sets.reduce((sss, set) => sss + (parseFloat(set.weight) || 0) * (parseFloat(set.reps) || 0), 0), 0), 0);
+
+  // Weekly streak
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const weekDays = ['S','M','T','W','T','F','S'];
+  const workoutDates = new Set(data.workouts.map(w => new Date(w.date).toDateString()));
+
+  let streakDots = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - dayOfWeek + i);
+    const done = workoutDates.has(d.toDateString());
+    const isToday = d.toDateString() === today.toDateString();
+    streakDots += `<div class="streak-dot ${done ? 'done' : ''} ${isToday ? 'today' : ''}">${weekDays[i]}</div>`;
+  }
+
+  statsSection.innerHTML = `
+    <div class="streak-bar">${streakDots}</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">${totalWorkouts}</div>
+        <div class="stat-label">Workouts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${Math.round(totalDuration / 60)}<span style="font-size:0.9rem">m</span></div>
+        <div class="stat-label">Total Time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${totalSets}</div>
+        <div class="stat-label">Total Sets</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${totalVolume > 999 ? Math.round(totalVolume/1000) + 'k' : totalVolume}</div>
+        <div class="stat-label">Volume (lbs)</div>
+      </div>
+    </div>`;
+
+  list.innerHTML = data.workouts.map((w, i) => {
+    const d = new Date(w.date);
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const dur = `${Math.floor(w.duration / 60)}m`;
+    const totalSets = w.exercises.reduce((sum, e) => sum + e.sets.length, 0);
+
+    return `
+      <div class="history-item">
+        <div>
+          <div class="history-name">${w.exercises.map(e => e.name).join(', ')}</div>
+          <div class="history-summary">${w.exercises.length} exercise${w.exercises.length > 1 ? 's' : ''} &middot; ${totalSets} sets &middot; ${dur}</div>
+          <div class="history-date">${dateStr}</div>
+        </div>
+        <button class="btn-icon" onclick="deleteWorkout(${i})" title="Delete">&times;</button>
+      </div>`;
+  }).join('');
+}
+
+function deleteWorkout(index) {
+  if (!confirm('Delete this workout?')) return;
+  const data = getData();
+  data.workouts.splice(index, 1);
+  saveData(data);
+  renderHistory();
+}
+
+function clearHistory() {
+  if (!confirm('Delete ALL workout history? This cannot be undone.')) return;
+  saveData({ workouts: [] });
+  renderHistory();
+}
+
+// ==================== REST TIMER ====================
+let restInterval = null;
+let restTimeLeft = 0;
+let restTotalTime = 0;
+
+function startRest(seconds) {
+  clearInterval(restInterval);
+  restTotalTime = seconds;
+  restTimeLeft = seconds;
+
+  // Highlight active preset
+  document.querySelectorAll('.rest-presets button:not(#rest-stop-btn)').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent.split(':')[0]) * 60 + parseInt(b.textContent.split(':')[1]) === seconds);
+  });
+  document.getElementById('rest-stop-btn').style.display = '';
+
+  updateRestDisplay();
+  restInterval = setInterval(() => {
+    restTimeLeft--;
+    if (restTimeLeft <= 0) {
+      restTimeLeft = 0;
+      clearInterval(restInterval);
+      restInterval = null;
+      playBeep();
+      document.getElementById('rest-progress').classList.add('done');
+      document.getElementById('rest-time').classList.remove('resting');
+      document.getElementById('rest-stop-btn').style.display = 'none';
+    }
+    updateRestDisplay();
+  }, 1000);
+}
+
+function stopRest() {
+  clearInterval(restInterval);
+  restInterval = null;
+  restTimeLeft = 0;
+  restTotalTime = 0;
+  document.getElementById('rest-time').textContent = '0:00';
+  document.getElementById('rest-time').classList.remove('resting');
+  document.getElementById('rest-progress').style.width = '0%';
+  document.getElementById('rest-progress').classList.remove('done');
+  document.getElementById('rest-stop-btn').style.display = 'none';
+}
+
+function updateRestDisplay() {
+  const min = Math.floor(restTimeLeft / 60);
+  const sec = String(restTimeLeft % 60).padStart(2, '0');
+  const el = document.getElementById('rest-time');
+  el.textContent = `${min}:${sec}`;
+  el.classList.toggle('resting', restTimeLeft > 0);
+
+  const pct = restTotalTime > 0 ? ((restTotalTime - restTimeLeft) / restTotalTime) * 100 : 0;
+  const bar = document.getElementById('rest-progress');
+  bar.style.width = pct + '%';
+  if (restTimeLeft > 0) bar.classList.remove('done');
+}
+
+// ==================== EXERCISE INFO ====================
+const EXERCISE_INFO = {
+  // PUSH - Chest
+  'Flat Dumbbell Press': {
+    reps: '6-10', rest: '2 min',
+    tip: 'Lie flat, feet on floor. Keep shoulder blades retracted. Press up and slightly inward \u2014 dumbbells almost touch at top. Lower with control until elbows are at 90\u00b0. Don\u2019t flare elbows past 45\u00b0.'
+  },
+  'Incline Dumbbell Press (30-45\u00b0)': {
+    reps: '8-10', rest: '90s',
+    tip: 'Set bench to 30\u201345\u00b0. Press straight up (perpendicular to bench angle). Don\u2019t let dumbbells drift forward over face. Keep shoulder blades pinched. Feel tension in upper chest and front delts.'
+  },
+  'Incline Dumbbell Press (45\u00b0)': {
+    reps: '10-12', rest: '90s',
+    tip: 'Set bench to 45\u00b0. Press straight up perpendicular to bench. Keep shoulder blades pinched back. Control the negative for 2\u20133 seconds. Upper chest volume focus.'
+  },
+  'Flat Dumbbell Flyes': {
+    reps: '12-15', rest: '90s',
+    tip: 'Start with dumbbells pressed together above chest. Keep a slight, locked bend in elbows throughout. Lower in a wide arc until chest feels stretched \u2014 don\u2019t go too deep. Squeeze pecs to bring dumbbells back together.'
+  },
+  'Decline Dumbbell Press': {
+    reps: '10-12', rest: '90s',
+    tip: 'Set bench to 15\u201330\u00b0 decline. Hook feet under pad. Press up perpendicular to body. Lower to outer chest with elbows at 45\u00b0. Targets lower chest fibers.'
+  },
+  // PUSH - Shoulders
+  'Dumbbell Shoulder Press': {
+    reps: '6-10', rest: '2 min',
+    tip: 'Sit upright, back supported. Start at shoulder height, palms forward. Press straight up until arms fully extended. Don\u2019t arch lower back. Lower to shoulder level with control.'
+  },
+  'Arnold Press': {
+    reps: '10-12', rest: '90s',
+    tip: 'Start palms facing you at shoulder height. As you press up, rotate palms to face forward. Reverse the rotation on the way down. Hits all three delt heads. Full ROM is key.'
+  },
+  'Dumbbell Lateral Raises': {
+    reps: '12-15', rest: '60s',
+    tip: 'Slight forward lean. Lead with elbows, not hands \u2014 think "pouring water." Stop at shoulder height, don\u2019t go higher. Control the negative. Keep ego out of it \u2014 use light weight.'
+  },
+  'Dumbbell Front Raises': {
+    reps: '12-15', rest: '60s',
+    tip: 'Raise dumbbells straight forward to shoulder height. Keep torso still \u2014 no swinging or momentum. Can use neutral or overhand grip. Alternate or both arms together.'
+  },
+  // PUSH - Triceps
+  'Dumbbell Skull Crushers': {
+    reps: '10-12', rest: '90s',
+    tip: 'Keep upper arms stationary, bend only at elbows. Lower dumbbells to sides of head (not forehead). Keep elbows pointed to ceiling, not flared. Squeeze triceps hard at extension.'
+  },
+  'Incline Dumbbell Skull Crushers': {
+    reps: '12-15', rest: '60s',
+    tip: 'Set bench to 30\u201345\u00b0 incline. Same technique as flat. Increased stretch on tricep long head. Keep upper arms perpendicular to floor throughout.'
+  },
+  'Overhead Tricep Extension': {
+    reps: '12-15', rest: '60s',
+    tip: 'Hold one dumbbell with both hands overhead. Keep upper arms vertical, close to head. Lower behind head by bending elbows until forearms touch biceps. Squeeze triceps at top.'
+  },
+  'Dumbbell Kickbacks': {
+    reps: '15-20', rest: '60s',
+    tip: 'Lean forward, support on bench. Keep upper arm parallel to floor, tight to body. Extend dumbbell back by straightening elbow. Squeeze hard at full extension. Keep upper arm completely still.'
+  },
+  // PULL - Back
+  'Dumbbell Romanian Deadlift': {
+    reps: '8-10', rest: '2 min',
+    tip: 'Feet hip-width, slight knee bend maintained throughout. Push hips back, lower dumbbells down front of legs. Keep back straight \u2014 never round. Stop when you feel hamstring stretch (mid-shin). Keep dumbbells close to body.'
+  },
+  'Chest-Supported Dumbbell Row': {
+    reps: '8-10', rest: '90s',
+    tip: 'Lie face-down on 30\u201345\u00b0 incline bench. Let arms hang straight down. Row dumbbells to ribcage, squeeze shoulder blades together. No momentum or body English \u2014 the bench prevents cheating.'
+  },
+  'Single-Arm Dumbbell Row': {
+    reps: '10-12', rest: '90s',
+    tip: 'One knee and hand on bench, torso parallel to ground. Row dumbbell to hip, driving elbow back. Keep torso still \u2014 don\u2019t rotate. Feel lat and mid-back working.'
+  },
+  'Incline Dumbbell Shrugs': {
+    reps: '12-15', rest: '60s',
+    tip: 'Lie face-down on 45\u00b0 incline bench. Hold dumbbells hanging down. Shrug shoulder blades together and up. Hold peak contraction for 1 second. Targets mid and upper traps.'
+  },
+  'Dumbbell Pullover': {
+    reps: '10-12', rest: '90s',
+    tip: 'Lie perpendicular across bench (upper back only on bench). Hold one dumbbell with both hands over chest. Lower behind head in arc, feeling lat stretch. Pull back using lats. Keep slight bend in arms.'
+  },
+  'Bent-Over Dumbbell Row': {
+    reps: '10-12', rest: '90s',
+    tip: 'Hinge at hips, back flat (never rounded), knees slightly bent. Row dumbbells to lower ribcage. Keep elbows close to body. Squeeze shoulder blades together at top.'
+  },
+  'Incline Dumbbell Row (Chest-Supported)': {
+    reps: '12-15', rest: '60s',
+    tip: 'Face-down on incline bench, neutral grip (palms facing). Row to ribcage, focus on rear delts and upper back. Squeeze at top for 1 second. Great for rear delt development.'
+  },
+  'Dumbbell Reverse Flyes': {
+    reps: '15-20', rest: '60s',
+    tip: 'Bend over at hips or lie face-down on incline bench. Use light weight with slight elbow bend. Raise dumbbells out to sides. Squeeze shoulder blades together at top. Focus on rear delts, not traps.'
+  },
+  // PULL - Biceps
+  'Dumbbell Curls (Standing)': {
+    reps: '8-12', rest: '90s',
+    tip: 'Stand with dumbbells at sides, palms forward. Keep upper arms stationary against sides \u2014 don\u2019t swing. Squeeze biceps at top. Lower slowly with full extension at bottom. No ego curling.'
+  },
+  'Hammer Curls': {
+    reps: '10-15', rest: '60s',
+    tip: 'Neutral grip (palms facing each other) throughout. Curl up keeping palms facing. Targets brachialis and brachioradialis. Can alternate arms or do both together.'
+  },
+  'Incline Dumbbell Curls': {
+    reps: '10-12', rest: '60s',
+    tip: 'Sit on 45\u201360\u00b0 incline bench. Let arms hang straight down (fully extended behind body). Curl up without moving upper arms forward. Maximum bicep stretch at bottom. Targets long head.'
+  },
+  'Concentration Curls': {
+    reps: '12-15', rest: '60s',
+    tip: 'Sit on bench, spread legs. Rest elbow against inner thigh. Full ROM curl. Squeeze bicep at top, slow 2\u20133 second eccentric. Isolates bicep \u2014 minimizes all cheating.'
+  },
+  'Dumbbell Reverse Curls': {
+    reps: '15-20', rest: '60s',
+    tip: 'Overhand grip (palms facing down). Curl up keeping palms down throughout. Keep wrists straight \u2014 don\u2019t let them bend back. Targets brachioradialis and forearm extensors. Go lighter than regular curls.'
+  },
+  // LEGS - Quads
+  'Goblet Squat': {
+    reps: '8-12', rest: '2 min',
+    tip: 'Hold one heavy dumbbell vertically at chest, cupping the top. Feet shoulder-width, toes slightly out. Squat deep \u2014 elbows track inside knees at bottom. Chest up, drive through heels.'
+  },
+  'Dumbbell Front Squat': {
+    reps: '10-12', rest: '2 min',
+    tip: 'Hold two dumbbells at shoulder height (like shoulder press start). Keep elbows high, chest up. Squat down keeping torso upright. More quad emphasis than goblet squat. Drive through heels.'
+  },
+  'Dumbbell Sumo Squat': {
+    reps: '12-15', rest: '90s',
+    tip: 'Hold one heavy dumbbell between legs with both hands. Wide stance, toes pointed out 45\u00b0. Squat straight down, torso upright. Knees track over toes. Targets inner quads and adductors.'
+  },
+  'Dumbbell Goblet Squat (Pause)': {
+    reps: '15-20', rest: '60s',
+    tip: 'Same as goblet squat but pause 2\u20133 seconds at the bottom of each rep. Eliminates momentum. Increases time under tension for quad pump. Use lighter weight than regular goblets.'
+  },
+  'Bulgarian Split Squat': {
+    reps: '10-12', rest: '90s',
+    tip: 'Rear foot on bench (laces down). Front foot 2\u20133 feet ahead. Hold dumbbells at sides. Lower straight down until back knee nearly touches floor. Drive through front heel. Keep torso upright.'
+  },
+  'Dumbbell Step-Ups': {
+    reps: '12-15', rest: '60s',
+    tip: 'Place entire foot on bench (12\u201320" high). Drive through heel of elevated leg. Don\u2019t push off the back leg. Step up, bring other foot to top, step back down with control. Complete all reps one leg first.'
+  },
+  'Walking Dumbbell Lunges': {
+    reps: '12-15', rest: '90s',
+    tip: 'Hold dumbbells at sides. Step forward into lunge \u2014 both knees at 90\u00b0. Back knee nearly touches floor. Push through front heel into next step. Keep torso upright, core tight.'
+  },
+  // LEGS - Hamstrings/Glutes
+  'Dumbbell Stiff-Leg Deadlift': {
+    reps: '10-12', rest: '90s',
+    tip: 'Similar to RDL but with straighter legs. Hinge at hips, keep legs nearly straight. Lower dumbbells to mid-shin or floor. Feel intense hamstring stretch. Drive hips forward to return.'
+  },
+  'Single-Leg Romanian Deadlift': {
+    reps: '10-12', rest: '90s',
+    tip: 'Hold dumbbell in opposite hand from standing leg. Hinge at hip, extend free leg straight behind. Keep back flat, slight bend in standing knee. Challenges balance \u2014 hits glutes and hamstrings hard.'
+  },
+  // LEGS - Calves
+  'Single-Leg Calf Raise': {
+    reps: '15-20', rest: '60s',
+    tip: 'Stand on edge of step. Hold dumbbell in one hand, other on wall for balance. Rise up on toes as high as possible. Lower heel below platform for full stretch. Pause 1 second at top. Control the negative.'
+  },
+  'Seated Calf Raise': {
+    reps: '15-20', rest: '60s',
+    tip: 'Sit on bench, balls of feet on platform or weight plates. Place dumbbells on knees. Rise up on toes, lower heels below platform for stretch. Targets soleus muscle (under gastrocnemius).'
+  },
+  // ABS
+  'Weighted Decline Sit-Ups': {
+    reps: '15-20', rest: '60s',
+    tip: 'Set bench to 15\u201330\u00b0 decline. Hook feet under pad. Hold dumbbell at chest. Curl spine up vertebra by vertebra \u2014 don\u2019t just hip flex. Exhale at top. Slow 2\u20133 second negative.'
+  },
+  'Dumbbell Russian Twists': {
+    reps: '20-30', rest: '60s',
+    tip: 'Sit with feet elevated, lean back 45\u00b0. Hold dumbbell at chest with both hands. Rotate torso fully to each side, touching dumbbell beside hip. Move your torso, not just your arms. Keep core braced.'
+  },
+  'Dumbbell Side Bends': {
+    reps: '15-20', rest: '60s',
+    tip: 'Hold one heavy dumbbell in one hand only. Bend laterally toward weighted side. Don\u2019t lean forward or backward \u2014 pure side bend. Control both directions. Feel stretch on opposite oblique.'
+  },
+  'Dumbbell Woodchoppers': {
+    reps: '12-15', rest: '60s',
+    tip: 'Hold one dumbbell with both hands. Start high on one side (above shoulder). Rotate torso and chop down across body to opposite hip. Pivot back foot, engage entire core. Explosive chop, controlled return.'
+  },
+  'Lying Dumbbell Leg Raises': {
+    reps: '15-20', rest: '60s',
+    tip: 'Lie flat on bench. Hold light dumbbell between feet (squeeze to secure). Grip bench sides for stability. Raise legs to 90\u00b0, lower with control. No momentum \u2014 pure lower ab contraction.'
+  },
+  'Plank (Weighted)': {
+    reps: '45-60s', rest: '60s',
+    tip: 'Forearm plank position. Place dumbbell on mid-back (or do bodyweight). Keep body in straight line \u2014 no sagging hips or piking up. Squeeze glutes, brace core hard. Breathe normally.'
+  },
+};
+
+// ==================== PPL ROUTINES ====================
+const PPL_ROUTINES = [
+  {
+    day: 'Push Day 1',
+    title: 'Chest / Shoulders / Triceps (Strength)',
+    schedule: 'Monday',
+    time: '~47 min',
+    totalSets: 24,
+    sections: [
+      { label: 'Chest (8 sets)', exercises: [
+        { name: 'Flat Dumbbell Press', sets: 4, reps: '6-10' },
+        { name: 'Incline Dumbbell Press (30-45\u00b0)', sets: 4, reps: '8-10' },
+      ]},
+      { label: 'Shoulders (7 sets)', exercises: [
+        { name: 'Dumbbell Shoulder Press', sets: 4, reps: '6-10' },
+        { name: 'Dumbbell Lateral Raises', sets: 3, reps: '12-15' },
+      ]},
+      { label: 'Triceps (6 sets)', exercises: [
+        { name: 'Dumbbell Skull Crushers', sets: 3, reps: '10-12' },
+        { name: 'Overhead Tricep Extension', sets: 3, reps: '12-15' },
+      ]},
+      { label: 'Abs (3 sets)', exercises: [
+        { name: 'Weighted Decline Sit-Ups', sets: 3, reps: '15-20' },
+      ]},
+    ]
+  },
+  {
+    day: 'Pull Day 1',
+    title: 'Back / Biceps (Strength)',
+    schedule: 'Tuesday',
+    time: '~46 min',
+    totalSets: 24,
+    sections: [
+      { label: 'Back (14 sets)', exercises: [
+        { name: 'Dumbbell Romanian Deadlift', sets: 4, reps: '8-10' },
+        { name: 'Chest-Supported Dumbbell Row', sets: 4, reps: '8-10' },
+        { name: 'Single-Arm Dumbbell Row', sets: 3, reps: '10-12' },
+        { name: 'Incline Dumbbell Shrugs', sets: 3, reps: '12-15' },
+      ]},
+      { label: 'Biceps (7 sets)', exercises: [
+        { name: 'Dumbbell Curls (Standing)', sets: 4, reps: '8-12' },
+        { name: 'Hammer Curls', sets: 3, reps: '10-15' },
+      ]},
+      { label: 'Abs (3 sets)', exercises: [
+        { name: 'Dumbbell Russian Twists', sets: 3, reps: '20-30' },
+      ]},
+    ]
+  },
+  {
+    day: 'Legs Day 1',
+    title: 'Quads / Hams / Glutes (Strength)',
+    schedule: 'Wednesday',
+    time: '~48 min',
+    totalSets: 24,
+    sections: [
+      { label: 'Quads (7 sets)', exercises: [
+        { name: 'Goblet Squat', sets: 4, reps: '8-12' },
+        { name: 'Bulgarian Split Squat', sets: 3, reps: '10-12' },
+      ]},
+      { label: 'Hamstrings / Glutes (10 sets)', exercises: [
+        { name: 'Dumbbell Romanian Deadlift', sets: 4, reps: '8-12' },
+        { name: 'Dumbbell Stiff-Leg Deadlift', sets: 3, reps: '10-12' },
+        { name: 'Dumbbell Step-Ups', sets: 3, reps: '12-15' },
+      ]},
+      { label: 'Calves (4 sets)', exercises: [
+        { name: 'Single-Leg Calf Raise', sets: 4, reps: '15-20' },
+      ]},
+      { label: 'Abs (3 sets)', exercises: [
+        { name: 'Dumbbell Side Bends', sets: 3, reps: '15-20' },
+      ]},
+    ]
+  },
+  {
+    day: 'Push Day 2',
+    title: 'Chest / Shoulders / Triceps (Hypertrophy)',
+    schedule: 'Thursday',
+    time: '~48 min',
+    totalSets: 25,
+    sections: [
+      { label: 'Chest (10 sets)', exercises: [
+        { name: 'Incline Dumbbell Press (45\u00b0)', sets: 4, reps: '10-12' },
+        { name: 'Flat Dumbbell Flyes', sets: 3, reps: '12-15' },
+        { name: 'Decline Dumbbell Press', sets: 3, reps: '10-12' },
+      ]},
+      { label: 'Shoulders (6 sets)', exercises: [
+        { name: 'Arnold Press', sets: 3, reps: '10-12' },
+        { name: 'Dumbbell Front Raises', sets: 3, reps: '12-15' },
+      ]},
+      { label: 'Triceps (6 sets)', exercises: [
+        { name: 'Incline Dumbbell Skull Crushers', sets: 3, reps: '12-15' },
+        { name: 'Dumbbell Kickbacks', sets: 3, reps: '15-20' },
+      ]},
+      { label: 'Abs (3 sets)', exercises: [
+        { name: 'Dumbbell Woodchoppers', sets: 3, reps: '12-15' },
+      ]},
+    ]
+  },
+  {
+    day: 'Pull Day 2',
+    title: 'Back / Biceps (Hypertrophy)',
+    schedule: 'Friday',
+    time: '~47 min',
+    totalSets: 26,
+    sections: [
+      { label: 'Back (14 sets)', exercises: [
+        { name: 'Dumbbell Pullover', sets: 4, reps: '10-12' },
+        { name: 'Bent-Over Dumbbell Row', sets: 4, reps: '10-12' },
+        { name: 'Incline Dumbbell Row (Chest-Supported)', sets: 3, reps: '12-15' },
+        { name: 'Dumbbell Reverse Flyes', sets: 3, reps: '15-20' },
+      ]},
+      { label: 'Biceps (9 sets)', exercises: [
+        { name: 'Incline Dumbbell Curls', sets: 3, reps: '10-12' },
+        { name: 'Concentration Curls', sets: 3, reps: '12-15' },
+        { name: 'Dumbbell Reverse Curls', sets: 3, reps: '15-20' },
+      ]},
+      { label: 'Abs (3 sets)', exercises: [
+        { name: 'Lying Dumbbell Leg Raises', sets: 3, reps: '15-20' },
+      ]},
+    ]
+  },
+  {
+    day: 'Legs Day 2',
+    title: 'Quads / Hams / Glutes (Hypertrophy)',
+    schedule: 'Saturday',
+    time: '~46 min',
+    totalSets: 23,
+    sections: [
+      { label: 'Quads (10 sets)', exercises: [
+        { name: 'Dumbbell Front Squat', sets: 4, reps: '10-12' },
+        { name: 'Dumbbell Sumo Squat', sets: 3, reps: '12-15' },
+        { name: 'Dumbbell Goblet Squat (Pause)', sets: 3, reps: '15-20' },
+      ]},
+      { label: 'Hamstrings / Glutes (6 sets)', exercises: [
+        { name: 'Walking Dumbbell Lunges', sets: 3, reps: '12-15' },
+        { name: 'Single-Leg Romanian Deadlift', sets: 3, reps: '10-12' },
+      ]},
+      { label: 'Calves (4 sets)', exercises: [
+        { name: 'Seated Calf Raise', sets: 4, reps: '15-20' },
+      ]},
+      { label: 'Core (3 sets)', exercises: [
+        { name: 'Plank (Weighted)', sets: 3, reps: '45-60s' },
+      ]},
+    ]
+  },
+];
+
+function renderRoutines() {
+  const container = document.getElementById('routines-list');
+  container.innerHTML = PPL_ROUTINES.map((r, i) => {
+    const allExercises = r.sections.flatMap(s => s.exercises);
+    return `
+      <div class="routine-card" onclick="startRoutine(${i})">
+        <div class="day-label">${r.day} &mdash; ${r.schedule}</div>
+        <div class="routine-title">${r.title}</div>
+        <div class="routine-meta">${r.totalSets} sets &middot; ${r.time} &middot; ${allExercises.length} exercises</div>
+        <div class="routine-exercises">
+          ${allExercises.map(e => `<span class="routine-tag">${e.name}</span>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function startRoutine(index) {
+  const routine = PPL_ROUTINES[index];
+  const exercises = routine.sections.flatMap(s =>
+    s.exercises.map(e => ({
+      name: e.name,
+      repRange: e.reps,
+      sets: Array.from({ length: e.sets }, () => ({ weight: '', reps: '' }))
+    }))
+  );
+
+  activeWorkout = { exercises, startTime: Date.now(), routineName: routine.day + ': ' + routine.title };
+  workoutStartTime = Date.now();
+  document.getElementById('workout-idle').style.display = 'none';
+  document.getElementById('workout-active').style.display = 'block';
+
+  // Switch to workout tab
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-workout').classList.add('active');
+  document.querySelector('nav button').classList.add('active');
+
+  workoutInterval = setInterval(updateWorkoutTimer, 1000);
+  updateWorkoutTimer();
+  renderExercises();
+}
+
+// ==================== INIT ====================
+document.getElementById('exercise-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+document.getElementById('exercise-name').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') confirmAddExercise();
+});
+
+renderRecentWorkouts();
+renderRoutines();
+resetTimer();
+</script>
+
+</body>
+</html>
