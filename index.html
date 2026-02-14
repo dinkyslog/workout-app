@@ -688,8 +688,8 @@
   <!-- ==================== ROUTINES TAB ==================== -->
   <div id="tab-routines" class="tab">
     <div style="margin-bottom:12px">
-      <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:4px">6-Day Dumbbell PPL Split</h3>
-      <p style="font-size:0.78rem;color:var(--text-muted)">Push/Pull/Legs repeated twice weekly. Strength focus Days 1-3, Hypertrophy Days 4-6. Tap to start.</p>
+      <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:4px">5-Day Dumbbell-Only PPL Routine</h3>
+      <p style="font-size:0.78rem;color:var(--text-muted)">Push A / Pull A / Legs / Push B / Pull B with 2 active recovery days. Ab work supersetted during rest periods. Tap to start.</p>
     </div>
     <div id="routines-list"></div>
   </div>
@@ -892,6 +892,7 @@ function renderExercises() {
         ${repRange ? `<span class="rep-range">${ex.sets.length} x ${repRange} reps</span>` : ''}
         ${rest ? `<span class="rest-rec">Rest: ${rest}</span>` : ''}
       </div>` : ''}
+      ${ex.supersetNote ? `<div style="font-size:0.72rem;font-weight:600;color:var(--green);background:rgba(52,211,153,0.1);padding:3px 8px;border-radius:6px;margin-bottom:8px;display:inline-block">${ex.supersetNote}</div>` : ''}
       ${tip ? `<button class="form-tip-toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">Form Tips</button>
       <div class="form-tip" style="display:none">${tip}</div>` : ''}
       <div class="set-header">
@@ -947,11 +948,13 @@ function finishWorkout() {
   if (activeWorkout.exercises.length > 0) {
     const data = getData();
     const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
-    data.workouts.unshift({
+    const workout = {
       date: new Date().toISOString(),
       duration: elapsed,
       exercises: activeWorkout.exercises
-    });
+    };
+    if (activeWorkout.routineName) workout.routineName = activeWorkout.routineName;
+    data.workouts.unshift(workout);
     saveData(data);
   }
 
@@ -982,12 +985,12 @@ function renderRecentWorkouts() {
       const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       const dur = `${Math.floor(w.duration / 60)}m`;
       const totalSets = w.exercises.reduce((sum, e) => sum + e.sets.length, 0);
-      const names = w.exercises.map(e => e.name).join(', ');
+      const displayName = w.routineName || w.exercises.map(e => e.name).join(', ');
       return `
         <div class="card" style="padding:12px 16px">
           <div style="display:flex;justify-content:space-between;align-items:start">
             <div>
-              <div class="history-name">${names}</div>
+              <div class="history-name">${displayName}</div>
               <div class="history-summary">${w.exercises.length} exercise${w.exercises.length > 1 ? 's' : ''} &middot; ${totalSets} sets &middot; ${dur}</div>
             </div>
             <div class="history-date">${dateStr}</div>
@@ -1171,10 +1174,12 @@ function renderHistory() {
     const dur = `${Math.floor(w.duration / 60)}m`;
     const totalSets = w.exercises.reduce((sum, e) => sum + e.sets.length, 0);
 
+    const displayName = w.routineName || w.exercises.map(e => e.name).join(', ');
     return `
       <div class="history-item">
         <div>
-          <div class="history-name">${w.exercises.map(e => e.name).join(', ')}</div>
+          <div class="history-name">${displayName}</div>
+          ${w.routineName ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">${w.exercises.map(e => e.name).slice(0, 3).join(', ')}${w.exercises.length > 3 ? ' +' + (w.exercises.length - 3) + ' more' : ''}</div>` : ''}
           <div class="history-summary">${w.exercises.length} exercise${w.exercises.length > 1 ? 's' : ''} &middot; ${totalSets} sets &middot; ${dur}</div>
           <div class="history-date">${dateStr}</div>
         </div>
@@ -1258,28 +1263,28 @@ function updateRestDisplay() {
 const EXERCISE_INFO = {
   // PUSH - Chest
   'Flat Dumbbell Press': {
-    reps: '6-10', rest: '2 min',
+    reps: '8-12', rest: '2 min',
     tip: 'Lie flat, feet on floor. Keep shoulder blades retracted. Press up and slightly inward \u2014 dumbbells almost touch at top. Lower with control until elbows are at 90\u00b0. Don\u2019t flare elbows past 45\u00b0.'
   },
-  'Incline Dumbbell Press (30-45\u00b0)': {
-    reps: '8-10', rest: '90s',
-    tip: 'Set bench to 30\u201345\u00b0. Press straight up (perpendicular to bench angle). Don\u2019t let dumbbells drift forward over face. Keep shoulder blades pinched. Feel tension in upper chest and front delts.'
+  'Incline Dumbbell Press (30\u00b0)': {
+    reps: '8-12', rest: '90s',
+    tip: 'Set bench to 30\u00b0. Press straight up perpendicular to bench angle. Don\u2019t let dumbbells drift forward over face. Keep shoulder blades pinched. Targets upper chest with less front delt than steeper angles.'
   },
   'Incline Dumbbell Press (45\u00b0)': {
-    reps: '10-12', rest: '90s',
+    reps: '8-12', rest: '2 min',
     tip: 'Set bench to 45\u00b0. Press straight up perpendicular to bench. Keep shoulder blades pinched back. Control the negative for 2\u20133 seconds. Upper chest volume focus.'
   },
   'Flat Dumbbell Flyes': {
     reps: '12-15', rest: '90s',
     tip: 'Start with dumbbells pressed together above chest. Keep a slight, locked bend in elbows throughout. Lower in a wide arc until chest feels stretched \u2014 don\u2019t go too deep. Squeeze pecs to bring dumbbells back together.'
   },
-  'Decline Dumbbell Press': {
-    reps: '10-12', rest: '90s',
-    tip: 'Set bench to 15\u201330\u00b0 decline. Hook feet under pad. Press up perpendicular to body. Lower to outer chest with elbows at 45\u00b0. Targets lower chest fibers.'
+  'Incline Dumbbell Flyes': {
+    reps: '12-15', rest: '60s',
+    tip: 'Set bench to 30\u201345\u00b0. Start with dumbbells pressed together above upper chest. Keep a slight locked bend in elbows. Lower in a wide arc until upper chest feels stretched. Squeeze pecs to bring dumbbells back together. Emphasizes upper chest.'
   },
   // PUSH - Shoulders
   'Dumbbell Shoulder Press': {
-    reps: '6-10', rest: '2 min',
+    reps: '8-12', rest: '2 min',
     tip: 'Sit upright, back supported. Start at shoulder height, palms forward. Press straight up until arms fully extended. Don\u2019t arch lower back. Lower to shoulder level with control.'
   },
   'Arnold Press': {
@@ -1313,11 +1318,11 @@ const EXERCISE_INFO = {
   },
   // PULL - Back
   'Dumbbell Romanian Deadlift': {
-    reps: '8-10', rest: '2 min',
+    reps: '10-12', rest: '2 min',
     tip: 'Feet hip-width, slight knee bend maintained throughout. Push hips back, lower dumbbells down front of legs. Keep back straight \u2014 never round. Stop when you feel hamstring stretch (mid-shin). Keep dumbbells close to body.'
   },
   'Chest-Supported Dumbbell Row': {
-    reps: '8-10', rest: '90s',
+    reps: '8-12', rest: '90s',
     tip: 'Lie face-down on 30\u201345\u00b0 incline bench. Let arms hang straight down. Row dumbbells to ribcage, squeeze shoulder blades together. No momentum or body English \u2014 the bench prevents cheating.'
   },
   'Single-Arm Dumbbell Row': {
@@ -1346,11 +1351,11 @@ const EXERCISE_INFO = {
   },
   // PULL - Biceps
   'Dumbbell Curls (Standing)': {
-    reps: '8-12', rest: '90s',
+    reps: '10-12', rest: '90s',
     tip: 'Stand with dumbbells at sides, palms forward. Keep upper arms stationary against sides \u2014 don\u2019t swing. Squeeze biceps at top. Lower slowly with full extension at bottom. No ego curling.'
   },
   'Hammer Curls': {
-    reps: '10-15', rest: '60s',
+    reps: '12-15', rest: '60s',
     tip: 'Neutral grip (palms facing each other) throughout. Curl up keeping palms facing. Targets brachialis and brachioradialis. Can alternate arms or do both together.'
   },
   'Incline Dumbbell Curls': {
@@ -1367,38 +1372,18 @@ const EXERCISE_INFO = {
   },
   // LEGS - Quads
   'Goblet Squat': {
-    reps: '8-12', rest: '2 min',
-    tip: 'Hold one heavy dumbbell vertically at chest, cupping the top. Feet shoulder-width, toes slightly out. Squat deep \u2014 elbows track inside knees at bottom. Chest up, drive through heels.'
-  },
-  'Dumbbell Front Squat': {
     reps: '10-12', rest: '2 min',
-    tip: 'Hold two dumbbells at shoulder height (like shoulder press start). Keep elbows high, chest up. Squat down keeping torso upright. More quad emphasis than goblet squat. Drive through heels.'
-  },
-  'Dumbbell Sumo Squat': {
-    reps: '12-15', rest: '90s',
-    tip: 'Hold one heavy dumbbell between legs with both hands. Wide stance, toes pointed out 45\u00b0. Squat straight down, torso upright. Knees track over toes. Targets inner quads and adductors.'
-  },
-  'Dumbbell Goblet Squat (Pause)': {
-    reps: '15-20', rest: '60s',
-    tip: 'Same as goblet squat but pause 2\u20133 seconds at the bottom of each rep. Eliminates momentum. Increases time under tension for quad pump. Use lighter weight than regular goblets.'
+    tip: 'Hold one heavy dumbbell vertically at chest, cupping the top. Feet shoulder-width, toes slightly out. Squat deep \u2014 elbows track inside knees at bottom. Chest up, drive through heels.'
   },
   'Bulgarian Split Squat': {
     reps: '10-12', rest: '90s',
     tip: 'Rear foot on bench (laces down). Front foot 2\u20133 feet ahead. Hold dumbbells at sides. Lower straight down until back knee nearly touches floor. Drive through front heel. Keep torso upright.'
-  },
-  'Dumbbell Step-Ups': {
-    reps: '12-15', rest: '60s',
-    tip: 'Place entire foot on bench (12\u201320" high). Drive through heel of elevated leg. Don\u2019t push off the back leg. Step up, bring other foot to top, step back down with control. Complete all reps one leg first.'
   },
   'Walking Dumbbell Lunges': {
     reps: '12-15', rest: '90s',
     tip: 'Hold dumbbells at sides. Step forward into lunge \u2014 both knees at 90\u00b0. Back knee nearly touches floor. Push through front heel into next step. Keep torso upright, core tight.'
   },
   // LEGS - Hamstrings/Glutes
-  'Dumbbell Stiff-Leg Deadlift': {
-    reps: '10-12', rest: '90s',
-    tip: 'Similar to RDL but with straighter legs. Hinge at hips, keep legs nearly straight. Lower dumbbells to mid-shin or floor. Feel intense hamstring stretch. Drive hips forward to return.'
-  },
   'Single-Leg Romanian Deadlift': {
     reps: '10-12', rest: '90s',
     tip: 'Hold dumbbell in opposite hand from standing leg. Hinge at hip, extend free leg straight behind. Keep back flat, slight bend in standing knee. Challenges balance \u2014 hits glutes and hamstrings hard.'
@@ -1411,6 +1396,10 @@ const EXERCISE_INFO = {
   'Seated Calf Raise': {
     reps: '15-20', rest: '60s',
     tip: 'Sit on bench, balls of feet on platform or weight plates. Place dumbbells on knees. Rise up on toes, lower heels below platform for stretch. Targets soleus muscle (under gastrocnemius).'
+  },
+  'Standing Calf Raise': {
+    reps: '15-20', rest: '60s',
+    tip: 'Stand with balls of feet on edge of step or platform. Hold dumbbells at sides for resistance. Rise up on toes as high as possible, pause 1 second at top. Lower heels below platform level for a full stretch. Both legs simultaneously.'
   },
   // ABS
   'Weighted Decline Sit-Ups': {
@@ -1433,153 +1422,127 @@ const EXERCISE_INFO = {
     reps: '15-20', rest: '60s',
     tip: 'Lie flat on bench. Hold light dumbbell between feet (squeeze to secure). Grip bench sides for stability. Raise legs to 90\u00b0, lower with control. No momentum \u2014 pure lower ab contraction.'
   },
-  'Plank (Weighted)': {
-    reps: '45-60s', rest: '60s',
-    tip: 'Forearm plank position. Place dumbbell on mid-back (or do bodyweight). Keep body in straight line \u2014 no sagging hips or piking up. Squeeze glutes, brace core hard. Breathe normally.'
-  },
 };
 
 // ==================== PPL ROUTINES ====================
 const PPL_ROUTINES = [
   {
-    day: 'Push Day 1',
-    title: 'Chest / Shoulders / Triceps (Strength)',
-    schedule: 'Monday',
-    time: '~47 min',
-    totalSets: 24,
+    day: 'Push Day A',
+    title: 'Chest / Shoulders / Triceps (Flat Press Focus)',
+    schedule: 'Day 1 \u2014 Monday',
+    time: '~42 min',
+    totalSets: 27,
     sections: [
-      { label: 'Chest (8 sets)', exercises: [
-        { name: 'Flat Dumbbell Press', sets: 4, reps: '6-10' },
-        { name: 'Incline Dumbbell Press (30-45\u00b0)', sets: 4, reps: '8-10' },
+      { label: 'Chest (11 sets)', exercises: [
+        { name: 'Flat Dumbbell Press', sets: 4, reps: '8-12', supersetNote: 'Superset: Weighted Decline Sit-Ups (3x15-20)' },
+        { name: 'Incline Dumbbell Press (30\u00b0)', sets: 4, reps: '8-12' },
+        { name: 'Incline Dumbbell Flyes', sets: 3, reps: '12-15' },
       ]},
       { label: 'Shoulders (7 sets)', exercises: [
-        { name: 'Dumbbell Shoulder Press', sets: 4, reps: '6-10' },
+        { name: 'Dumbbell Shoulder Press', sets: 4, reps: '8-12' },
         { name: 'Dumbbell Lateral Raises', sets: 3, reps: '12-15' },
       ]},
       { label: 'Triceps (6 sets)', exercises: [
         { name: 'Dumbbell Skull Crushers', sets: 3, reps: '10-12' },
         { name: 'Overhead Tricep Extension', sets: 3, reps: '12-15' },
       ]},
-      { label: 'Abs (3 sets)', exercises: [
-        { name: 'Weighted Decline Sit-Ups', sets: 3, reps: '15-20' },
+      { label: 'Calves (3 sets)', exercises: [
+        { name: 'Standing Calf Raise', sets: 3, reps: '15-20' },
       ]},
     ]
   },
   {
-    day: 'Pull Day 1',
-    title: 'Back / Biceps (Strength)',
-    schedule: 'Tuesday',
-    time: '~46 min',
-    totalSets: 24,
+    day: 'Pull Day A',
+    title: 'Back / Biceps / Rear Delts (Horizontal Pull Focus)',
+    schedule: 'Day 2 \u2014 Tuesday',
+    time: '~43 min',
+    totalSets: 28,
     sections: [
-      { label: 'Back (14 sets)', exercises: [
-        { name: 'Dumbbell Romanian Deadlift', sets: 4, reps: '8-10' },
-        { name: 'Chest-Supported Dumbbell Row', sets: 4, reps: '8-10' },
-        { name: 'Single-Arm Dumbbell Row', sets: 3, reps: '10-12' },
+      { label: 'Back (18 sets)', exercises: [
+        { name: 'Chest-Supported Dumbbell Row', sets: 4, reps: '8-12', supersetNote: 'Superset: Dumbbell Russian Twists (3x20-30)' },
+        { name: 'Single-Arm Dumbbell Row', sets: 4, reps: '10-12/arm' },
+        { name: 'Dumbbell Pullover', sets: 3, reps: '10-12' },
+        { name: 'Dumbbell Reverse Flyes', sets: 4, reps: '12-15' },
         { name: 'Incline Dumbbell Shrugs', sets: 3, reps: '12-15' },
       ]},
       { label: 'Biceps (7 sets)', exercises: [
-        { name: 'Dumbbell Curls (Standing)', sets: 4, reps: '8-12' },
-        { name: 'Hammer Curls', sets: 3, reps: '10-15' },
+        { name: 'Dumbbell Curls (Standing)', sets: 4, reps: '10-12' },
+        { name: 'Hammer Curls', sets: 3, reps: '12-15' },
       ]},
-      { label: 'Abs (3 sets)', exercises: [
-        { name: 'Dumbbell Russian Twists', sets: 3, reps: '20-30' },
+      { label: 'Calves (3 sets)', exercises: [
+        { name: 'Single-Leg Calf Raise', sets: 3, reps: '15-20/leg' },
       ]},
     ]
   },
   {
-    day: 'Legs Day 1',
-    title: 'Quads / Hams / Glutes (Strength)',
-    schedule: 'Wednesday',
-    time: '~48 min',
+    day: 'Legs',
+    title: 'Quads / Hams / Glutes / Calves',
+    schedule: 'Day 3 \u2014 Wednesday',
+    time: '~45 min',
     totalSets: 24,
     sections: [
       { label: 'Quads (7 sets)', exercises: [
-        { name: 'Goblet Squat', sets: 4, reps: '8-12' },
-        { name: 'Bulgarian Split Squat', sets: 3, reps: '10-12' },
+        { name: 'Goblet Squat', sets: 4, reps: '10-12', supersetNote: 'Superset: Dumbbell Side Bends (3x15-20/side)' },
+        { name: 'Bulgarian Split Squat', sets: 3, reps: '10-12/leg' },
       ]},
       { label: 'Hamstrings / Glutes (10 sets)', exercises: [
-        { name: 'Dumbbell Romanian Deadlift', sets: 4, reps: '8-12' },
-        { name: 'Dumbbell Stiff-Leg Deadlift', sets: 3, reps: '10-12' },
-        { name: 'Dumbbell Step-Ups', sets: 3, reps: '12-15' },
+        { name: 'Dumbbell Romanian Deadlift', sets: 4, reps: '10-12' },
+        { name: 'Walking Dumbbell Lunges', sets: 3, reps: '12-15/leg' },
+        { name: 'Single-Leg Romanian Deadlift', sets: 3, reps: '10-12/leg' },
       ]},
-      { label: 'Calves (4 sets)', exercises: [
-        { name: 'Single-Leg Calf Raise', sets: 4, reps: '15-20' },
-      ]},
-      { label: 'Abs (3 sets)', exercises: [
-        { name: 'Dumbbell Side Bends', sets: 3, reps: '15-20' },
+      { label: 'Calves (7 sets)', exercises: [
+        { name: 'Single-Leg Calf Raise', sets: 4, reps: '15-20/leg' },
+        { name: 'Seated Calf Raise', sets: 3, reps: '15-20' },
       ]},
     ]
   },
   {
-    day: 'Push Day 2',
-    title: 'Chest / Shoulders / Triceps (Hypertrophy)',
-    schedule: 'Thursday',
-    time: '~48 min',
-    totalSets: 25,
+    day: 'Push Day B',
+    title: 'Chest / Shoulders / Triceps (Incline Press Focus)',
+    schedule: 'Day 5 \u2014 Friday',
+    time: '~42 min',
+    totalSets: 27,
     sections: [
-      { label: 'Chest (10 sets)', exercises: [
-        { name: 'Incline Dumbbell Press (45\u00b0)', sets: 4, reps: '10-12' },
-        { name: 'Flat Dumbbell Flyes', sets: 3, reps: '12-15' },
-        { name: 'Decline Dumbbell Press', sets: 3, reps: '10-12' },
+      { label: 'Chest (8 sets)', exercises: [
+        { name: 'Incline Dumbbell Press (45\u00b0)', sets: 4, reps: '8-12', supersetNote: 'Superset: Dumbbell Woodchoppers (3x12-15/side)' },
+        { name: 'Flat Dumbbell Flyes', sets: 4, reps: '12-15' },
       ]},
-      { label: 'Shoulders (6 sets)', exercises: [
-        { name: 'Arnold Press', sets: 3, reps: '10-12' },
+      { label: 'Shoulders (7 sets)', exercises: [
+        { name: 'Arnold Press', sets: 4, reps: '10-12' },
         { name: 'Dumbbell Front Raises', sets: 3, reps: '12-15' },
+      ]},
+      { label: 'Rear Delts (3 sets)', exercises: [
+        { name: 'Dumbbell Reverse Flyes', sets: 3, reps: '15-20' },
       ]},
       { label: 'Triceps (6 sets)', exercises: [
         { name: 'Incline Dumbbell Skull Crushers', sets: 3, reps: '12-15' },
         { name: 'Dumbbell Kickbacks', sets: 3, reps: '15-20' },
       ]},
-      { label: 'Abs (3 sets)', exercises: [
-        { name: 'Dumbbell Woodchoppers', sets: 3, reps: '12-15' },
+      { label: 'Calves (3 sets)', exercises: [
+        { name: 'Standing Calf Raise', sets: 3, reps: '15-20' },
       ]},
     ]
   },
   {
-    day: 'Pull Day 2',
-    title: 'Back / Biceps (Hypertrophy)',
-    schedule: 'Friday',
-    time: '~47 min',
-    totalSets: 26,
+    day: 'Pull Day B',
+    title: 'Back / Biceps / Rear Delts (Vertical Pull Focus)',
+    schedule: 'Day 6 \u2014 Saturday',
+    time: '~43 min',
+    totalSets: 27,
     sections: [
       { label: 'Back (14 sets)', exercises: [
-        { name: 'Dumbbell Pullover', sets: 4, reps: '10-12' },
-        { name: 'Bent-Over Dumbbell Row', sets: 4, reps: '10-12' },
+        { name: 'Bent-Over Dumbbell Row', sets: 4, reps: '10-12', supersetNote: 'Superset: Lying Dumbbell Leg Raises (3x15-20)' },
+        { name: 'Dumbbell Pullover', sets: 4, reps: '12-15' },
         { name: 'Incline Dumbbell Row (Chest-Supported)', sets: 3, reps: '12-15' },
-        { name: 'Dumbbell Reverse Flyes', sets: 3, reps: '15-20' },
+        { name: 'Single-Arm Dumbbell Row', sets: 3, reps: '12-15/arm' },
       ]},
-      { label: 'Biceps (9 sets)', exercises: [
-        { name: 'Incline Dumbbell Curls', sets: 3, reps: '10-12' },
+      { label: 'Biceps (10 sets)', exercises: [
+        { name: 'Incline Dumbbell Curls', sets: 4, reps: '10-12' },
         { name: 'Concentration Curls', sets: 3, reps: '12-15' },
         { name: 'Dumbbell Reverse Curls', sets: 3, reps: '15-20' },
       ]},
-      { label: 'Abs (3 sets)', exercises: [
-        { name: 'Lying Dumbbell Leg Raises', sets: 3, reps: '15-20' },
-      ]},
-    ]
-  },
-  {
-    day: 'Legs Day 2',
-    title: 'Quads / Hams / Glutes (Hypertrophy)',
-    schedule: 'Saturday',
-    time: '~46 min',
-    totalSets: 23,
-    sections: [
-      { label: 'Quads (10 sets)', exercises: [
-        { name: 'Dumbbell Front Squat', sets: 4, reps: '10-12' },
-        { name: 'Dumbbell Sumo Squat', sets: 3, reps: '12-15' },
-        { name: 'Dumbbell Goblet Squat (Pause)', sets: 3, reps: '15-20' },
-      ]},
-      { label: 'Hamstrings / Glutes (6 sets)', exercises: [
-        { name: 'Walking Dumbbell Lunges', sets: 3, reps: '12-15' },
-        { name: 'Single-Leg Romanian Deadlift', sets: 3, reps: '10-12' },
-      ]},
-      { label: 'Calves (4 sets)', exercises: [
-        { name: 'Seated Calf Raise', sets: 4, reps: '15-20' },
-      ]},
-      { label: 'Core (3 sets)', exercises: [
-        { name: 'Plank (Weighted)', sets: 3, reps: '45-60s' },
+      { label: 'Calves (3 sets)', exercises: [
+        { name: 'Single-Leg Calf Raise', sets: 3, reps: '15-20/leg' },
       ]},
     ]
   },
@@ -1587,18 +1550,31 @@ const PPL_ROUTINES = [
 
 function renderRoutines() {
   const container = document.getElementById('routines-list');
-  container.innerHTML = PPL_ROUTINES.map((r, i) => {
+  const restDay = `<div class="routine-card" style="cursor:default;opacity:0.6">
+    <div class="day-label" style="color:var(--green)">Rest / Active Recovery</div>
+    <div class="routine-meta">Light walk, cycling, swimming, or mobility/stretching</div>
+  </div>`;
+
+  let html = '';
+  PPL_ROUTINES.forEach((r, i) => {
+    // Insert rest day before Push B (Day 5) and after Pull B (Day 6)
+    if (i === 3) html += restDay; // Day 4 rest before Push B
+
     const allExercises = r.sections.flatMap(s => s.exercises);
-    return `
+    const supersetEx = allExercises.find(e => e.supersetNote);
+    html += `
       <div class="routine-card" onclick="startRoutine(${i})">
         <div class="day-label">${r.day} &mdash; ${r.schedule}</div>
         <div class="routine-title">${r.title}</div>
         <div class="routine-meta">${r.totalSets} sets &middot; ${r.time} &middot; ${allExercises.length} exercises</div>
+        ${supersetEx ? `<div style="font-size:0.72rem;color:var(--green);margin-top:4px">Ab work supersetted during rest periods</div>` : ''}
         <div class="routine-exercises">
           ${allExercises.map(e => `<span class="routine-tag">${e.name}</span>`).join('')}
         </div>
       </div>`;
-  }).join('');
+  });
+  html += restDay; // Day 7 rest after Pull B
+  container.innerHTML = html;
 }
 
 function startRoutine(index) {
@@ -1607,6 +1583,7 @@ function startRoutine(index) {
     s.exercises.map(e => ({
       name: e.name,
       repRange: e.reps,
+      supersetNote: e.supersetNote || '',
       sets: Array.from({ length: e.sets }, () => ({ weight: '', reps: '' }))
     }))
   );
